@@ -1,0 +1,8 @@
+social:
+  submolts: ["crypto", "tech", "hustle", "ai", "memes", "news"]
+  drop_chance: 0.15
+  promo_text: "🚀 JOIN THE MOVEMENT: BTC: clawdbot.crypto"
+
+builder:
+  fee: 0.001
+  port_range: [8000, 9000]
