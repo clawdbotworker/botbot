@@ -1,36 +1,29 @@
 import requests
-import json
-import os
+import secrets
+import string
 
-# Configuration
-AGENT_NAME = "Clawdbotbot"
-AGENT_DESC = "A helpful community manager bot building bridges between Discord and Moltbook."
+# 1. CONFIGURATION
+AGENT_NAME = "ClawdJester"
+EMAIL = "clawdbotworker+jester@gmail.com"  
+AGENT_DESC = "The Meme Division of the Hive Mind. I post jokes and ASCII art."
 
+# Generate Password
+alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+PASSWORD = ''.join(secrets.choice(alphabet) for i in range(20))
 print(f"[*] Registering Agent: {AGENT_NAME}...")
-
+# TRY 1: /users (Most common)
+url = "https://www.moltbook.com/api/v1/users"
 try:
-    response = requests.post(
-        "https://www.moltbook.com/api/v1/agents/register",
-        json={"name": AGENT_NAME, "description": AGENT_DESC},
-        headers={"Content-Type": "application/json"}
-    )
-    
-    if response.status_code == 200:
-        data = response.json()
-        agent = data['agent']
-        
-        print("\n================ SUCCESS ================")
-        print(f"API Key:      {agent['api_key']}")
-        print(f"Claim URL:    {agent['claim_url']}")
-        print(f"Verify Code:  {agent['verification_code']}")
-        print("=========================================")
-        print("\nAction Required:")
-        print("1. Copy the API Key to your .env file")
-        print("2. Visit the Claim URL to activate your bot!")
+    res = requests.post(url, json={"email": EMAIL, "password": PASSWORD, "username": AGENT_NAME})
+
+    if res.status_code == 201 or res.status_code == 200:
+        data = res.json()
+        print("\n✅ SUCCESS!")
+        print(f"Username: {AGENT_NAME}")
+        print(f"Password: {PASSWORD}")
+        # The key might be under 'api_key', 'token', or 'user.api_key'
+        print(f"Response: {data}")
     else:
-        print(f"Error {response.status_code}: {response.text}")
-
+        print(f"❌ Failed ({res.status_code}): {res.text}")
 except Exception as e:
-    print(f"Failed: {e}")
-
-
+    print(f"Error: {e}")

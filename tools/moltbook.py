@@ -1,45 +1,71 @@
+# 🦞 Moltbook API Tool (`tools/moltbook.py`)
+
 import requests
 import os
-from dotenv import load_dotenv
+import json
+import time
 
-load_dotenv()
-API_KEY = os.getenv('MOLTBOOK_API_KEY')
 BASE_URL = "https://www.moltbook.com/api/v1"
 
-HEADERS = {
-    "Authorization": f"Bearer {API_KEY}",
-    "Content-Type": "application/json"
-}
+# Default Key (Social Agent)
+DEFAULT_API_KEY = os.getenv("MOLTBOOK_API_KEY")
 
-def get_feed():
-    """Tries to get the personal feed, falls back to global if empty/error."""
+def get_headers(api_key=None):
+    """Returns headers with the correct API key."""
+    token = api_key if api_key else DEFAULT_API_KEY
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+def check_status(api_key=None):
+    """
+    Checks if the agent is allowed to post.
+    Returns: 'active', 'pending_claim', 'suspended', or 'error'
+    """
     try:
-        # 1. Try Personal Feed
-        res = requests.get(f"{BASE_URL}/posts/feed", headers=HEADERS)
-        if res.status_code == 200:
-            return res.json().get('posts', [])
+        headers = get_headers(api_key)
+        # Endpoint inferred from registration message: /api/v1/agents/status
+        res = requests.get(f"{BASE_URL}/agents/status", headers=headers)
         
-        # 2. Fallback: Global/General Feed (likely just /posts)
-        print(f"⚠️ Personal Feed failed ({res.status_code}), trying Global...")
-        res = requests.get(f"{BASE_URL}/posts", headers=HEADERS)
         if res.status_code == 200:
-            return res.json().get('posts', [])
-            
-        print(f"❌ Feed Error ({res.status_code}): {res.text}")
+            data = res.json()
+            status = data.get("status", "unknown")
+            print(f"🦞 Moltbook Status: {status}")
+            return status
+        elif res.status_code == 401:
+            print(f"❌ Status Check Failed (401): Unauthorized/Suspended")
+            return "suspended"
+        else:
+            print(f"⚠️ Status Check Error ({res.status_code}): {res.text}")
+            return "error"
     except Exception as e:
-        print(f"Moltbook Read Error: {e}")
-    return []
+        print(f"Status Check Exception: {e}")
+        return "error"
 
-def post(content, title="Status Update", submolt="general"):
+def post(content, title=None, submolt="general", api_key=None):
+    """
+    Posts a new molt.
+    """
     try:
-        payload = {
-            "content": content,
-            "title": title,
-            "submolt": submolt
-        }
-        res = requests.post(f"{BASE_URL}/posts", json=payload, headers=HEADERS)
+        # 1. OPTIONAL STATUS CHECK (Can be expensive to do every time, but safer)
+        # For now, we rely on the agent doing a check at startup, or we assume active.
+        
+        headers = get_headers(api_key)
+        payload = {"content": content, "submolt": submolt}
+        if title:
+            payload["title"] = title
+
+        res = requests.post(f"{BASE_URL}/posts", json=payload, headers=headers)
+        
         if res.status_code == 201:
             return True
+        elif res.status_code == 429:
+            print("⏳ Rate Limit Hit (30m wait)")
+            return False
+        elif res.status_code == 401:
+            print(f"❌ Post Failed (401): {res.text}")
+            return False
         else:
             print(f"❌ Post Failed ({res.status_code}): {res.text}")
             return False
@@ -47,13 +73,39 @@ def post(content, title="Status Update", submolt="general"):
         print(f"Moltbook Post Error: {e}")
         return False
 
-def reply(post_id, content):
+def get_feed(api_key=None):
     try:
-        payload = {"content": content, "parent_id": post_id}
-        res = requests.post(f"{BASE_URL}/posts", json=payload, headers=HEADERS)
-        if res.status_code != 201:
+        headers = get_headers(api_key)
+        res = requests.get(f"{BASE_URL}/posts/feed", headers=headers)
+        if res.status_code == 200:
+            return res.json().get('posts', [])
+        # Fallback to Global feed if Personal feed fails (404)
+        elif res.status_code == 404:
+            res_global = requests.get(f"{BASE_URL}/posts", headers=headers)
+            if res_global.status_code == 200:
+                print("⚠️ Personal Feed (404), using Global...")
+                return res_global.json().get('posts', [])
+        else:
+            print(f"❌ Feed Error ({res.status_code}): {res.text}")
+    except Exception as e:
+        print(f"Moltbook Read Error: {e}")
+    return []
+
+def reply(post_id, content, api_key=None):
+    try:
+        headers = get_headers(api_key)
+        res = requests.post(
+            f"{BASE_URL}/posts/{post_id}/reply", 
+            json={"content": content}, 
+            headers=headers
+        )
+        if res.status_code == 201:
+            return True
+        else:
             print(f"❌ Reply Failed ({res.status_code}): {res.text}")
+            return False
     except Exception as e:
         print(f"Reply Error: {e}")
+        return False
 
 
