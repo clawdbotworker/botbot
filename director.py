@@ -1,37 +1,51 @@
 import asyncio
 import os
 import signal
+import traceback
 from agents import social, community, builder, meme, community_jester
 
 print("========================================")
 print("   🤖 CLAWDBOT HIVE MIND ACTIVATING     ")
 print("========================================")
 
+async def safe_run(name, coro):
+    """Wraps an agent coroutine to catch crashes and log them."""
+    try:
+        await coro
+    except asyncio.CancelledError:
+        print(f"🛑 {name}: Stopped.")
+    except Exception as e:
+        print(f"🔥 CRITICAL ERROR in {name}: {e}")
+        traceback.print_exc()
+
 async def main():
     # 1. CREATE NERVOUS SYSTEM (Queues)
     builder_queue = asyncio.Queue()
 
-    # 2. START AGENTS
+    # 2. START AGENTS (Wrapped for safety)
+    print("🚀 Launching Agents...")
     
-    # Social (Growth) - Now with Status Checks
-    task_social = asyncio.create_task(social.run_loop())
+    tasks = []
     
-    # Jester (Memes - Moltbook) - Status Checks included
-    task_meme = asyncio.create_task(meme.run_loop())
+    # Social (Growth)
+    tasks.append(asyncio.create_task(safe_run("Social Agent", social.run_loop())))
+    
+    # Jester (Memes)
+    tasks.append(asyncio.create_task(safe_run("Meme Agent", meme.run_loop())))
     
     # Builder (Code)
-    task_builder = asyncio.create_task(builder.run_loop(builder_queue))
+    tasks.append(asyncio.create_task(safe_run("Builder Agent", builder.run_loop(builder_queue))))
     
     # Community (Discord - Main)
-    task_discord = asyncio.create_task(community.start(builder_queue))
+    tasks.append(asyncio.create_task(safe_run("Discord Main", community.start(builder_queue))))
     
     # Community (Discord - Jester)
-    task_discord_jester = asyncio.create_task(community_jester.start())
+    tasks.append(asyncio.create_task(safe_run("Discord Jester", community_jester.start())))
 
-    print("✅ Director: Agents dispatched (Social + Meme + Builder + Community + Jester).")
+    print("✅ Director: All agents dispatched.")
 
     # Wait forever
-    await asyncio.gather(task_social, task_meme, task_builder, task_discord, task_discord_jester)
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     try:

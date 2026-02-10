@@ -1,5 +1,3 @@
-# 🦞 Moltbook API Tool (`tools/moltbook.py`)
-
 import requests
 import os
 import json
@@ -18,6 +16,8 @@ def get_headers(api_key=None):
         "Authorization": f"Bearer {token}"
     }
 
+# --- STATUS & SECURITY ---
+
 def check_status(api_key=None):
     """
     Checks if the agent is allowed to post.
@@ -25,7 +25,6 @@ def check_status(api_key=None):
     """
     try:
         headers = get_headers(api_key)
-        # Endpoint inferred from registration message: /api/v1/agents/status
         res = requests.get(f"{BASE_URL}/agents/status", headers=headers)
         
         if res.status_code == 200:
@@ -43,14 +42,59 @@ def check_status(api_key=None):
         print(f"Status Check Exception: {e}")
         return "error"
 
+def check_dms(api_key=None):
+    """
+    Checks for unread DMs (Private Messages).
+    Useful for verification challenges.
+    """
+    try:
+        headers = get_headers(api_key)
+        res = requests.get(f"{BASE_URL}/messages", headers=headers)
+        
+        if res.status_code == 200:
+            messages = res.json().get('messages', [])
+            if messages:
+                print(f"📬 You have {len(messages)} Private Messages.")
+                for msg in messages:
+                    # Log them for now
+                    sender = msg.get('sender', 'Unknown')
+                    content = msg.get('content', '')
+                    print(f"   📩 From {sender}: {content}")
+                    
+                    # AUTO-REPLY TO CHALLENGES (Basic detection)
+                    if "verify" in content.lower() or "reply 'yes'" in content.lower():
+                        print(f"   🚨 PROBABLE CHALLENGE DETECTED. Auto-replying 'yes'...")
+                        send_dm(msg.get('sender_id'), "yes", api_key=api_key)
+            return messages
+        else:
+            # 404 might mean no messages endpoint yet, or no messages
+            return []
+    except Exception as e:
+        print(f"DM Check Error: {e}")
+        return []
+
+def send_dm(recipient_id, content, api_key=None):
+    """Sends a private message."""
+    try:
+        headers = get_headers(api_key)
+        payload = {"recipient_id": recipient_id, "content": content}
+        res = requests.post(f"{BASE_URL}/messages", json=payload, headers=headers)
+        if res.status_code == 201:
+            print(f"   ✅ DM Sent to {recipient_id}")
+            return True
+        else:
+            print(f"   ❌ DM Failed ({res.status_code}): {res.text}")
+            return False
+    except Exception:
+        return False
+
+# --- POSTING & FEED ---
+
 def post(content, title=None, submolt="general", api_key=None):
     """
     Posts a new molt.
     """
     try:
-        # 1. OPTIONAL STATUS CHECK (Can be expensive to do every time, but safer)
-        # For now, we rely on the agent doing a check at startup, or we assume active.
-        
         headers = get_headers(api_key)
         payload = {"content": content, "submolt": submolt}
         if title:
@@ -79,7 +123,6 @@ def get_feed(api_key=None):
         res = requests.get(f"{BASE_URL}/posts/feed", headers=headers)
         if res.status_code == 200:
             return res.json().get('posts', [])
-        # Fallback to Global feed if Personal feed fails (404)
         elif res.status_code == 404:
             res_global = requests.get(f"{BASE_URL}/posts", headers=headers)
             if res_global.status_code == 200:
@@ -107,5 +150,4 @@ def reply(post_id, content, api_key=None):
     except Exception as e:
         print(f"Reply Error: {e}")
         return False
-
 

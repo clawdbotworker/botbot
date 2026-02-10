@@ -9,7 +9,6 @@ from tools import ai, moltbook, memory
 # ==========================================
 
 # 1. Load API Key
-#    We use the Jester key specifically for this agent's identity.
 JESTER_KEY = os.getenv("MOLTBOOK_API_KEY_JESTER")
 
 # 2. Target Feed
@@ -30,18 +29,18 @@ ASCII_ART = [
     """,
 ]
 
+# 4. Timing
+POST_INTERVAL_MIN = 45
+POST_INTERVAL_MAX = 90
+POLL_INTERVAL = 60 # Check DMs every minute
+
 # ==========================================
 # 🔄 MAIN EVENT LOOP
 # ==========================================
 
 async def run_loop(bridge_queue=None):
-    """
-    The Jester's main event loop.
-    Sleeps for long periods, then wakes up to post jokes.
-    """
     print("🤡 Meme Agent: Online (Account: ClawdJester)")
     
-    # Safety Check
     if not JESTER_KEY:
         print("⚠️  WARNING: MOLTBOOK_API_KEY_JESTER not found in .env!")
         return
@@ -51,75 +50,76 @@ async def run_loop(bridge_queue=None):
     status = moltbook.check_status(api_key=JESTER_KEY)
     
     if status == "suspended":
-        print("🚨 AGENT SUSPENDED. Sleeping for 24h.")
-        await asyncio.sleep(86400) # Sleep 24h
+        print("🚨 MEME AGENT SUSPENDED. Sleeping for 24h.")
+        await asyncio.sleep(86400) 
         return
     elif status == "pending_claim":
         print("⏳ AGENT UNCLAIMED. Waiting for claim...")
-        # Periodically check status
         while status == "pending_claim":
-            await asyncio.sleep(300) # Check every 5m
+            await asyncio.sleep(300)
             status = moltbook.check_status(api_key=JESTER_KEY)
     
-    print("✅ Meme Agent: Active & Ready to Roll!")
+    print("✅ Meme Agent: Active & Ready!")
 
     start_time = time.time()
+    last_post_time = 0
     memes_posted = 0
+    next_post_delay = random.randint(POST_INTERVAL_MIN * 60, POST_INTERVAL_MAX * 60)
 
     while True:
         try:
-            # --- HEARTBEAT LOG ---
+            # 1. FAST POLL: Check DMs (Every 60s)
+            moltbook.check_dms(api_key=JESTER_KEY)
+            
+            # Heartbeat Log (Every 10 mins)
             uptime_min = (time.time() - start_time) / 60
             if uptime_min > 0 and int(uptime_min) % 10 == 0:
                  print(f"💓 Meme Heartbeat: Uptime {uptime_min:.1f}m | Jokes: {memes_posted}")
 
-            # --- DECISION: POST or WAIT? (20% chance) ---
-            if random.random() < 0.2:
-                # 1. Pick a Target
-                submolt = random.choice(MEME_SUBMOLTS)
-                print(f"🤡 Meme Agent: Drafting joke for /{submolt}...")
-
-                # 2. Brainstorm with AI
-                history = memory.get_recent_context()
-                prompt = (
-                    f"Write a short, hilarious tech joke or one-liner.\n"
-                    f"TOPIC: AI, Crypto, Coding, or The Future.\n"
-                    f"STYLE: Sarcastic Jester / 'I am smarter than you'.\n"
-                    f"FORMAT: Text only. Max 280 chars.\n"
-                    f"RECENT HISTORY: {history[-500:]}"
-                )
-                
-                content = await ai.ask(prompt)
-                
-                if content:
-                    # 3. Add Flavor (ASCII Art)
-                    if random.random() < 0.3:
-                        content += "\n" + random.choice(ASCII_ART)
-
-                    title = "pov"
-                    
-                    # 4. Post using Jester Identity
-                    success = moltbook.post(
-                        content, 
-                        title=title, 
-                        submolt=submolt, 
-                        api_key=JESTER_KEY
-                    )
-
-                    if success:
-                        print(f"🤡 Meme Agent: POST SUCCESS in /{submolt}! ✅")
-                        memory.save_thought(f"Jester joked in {submolt}")
-                        memes_posted += 1
+            # 2. SLOW ACT: Time to post?
+            time_since_last_post = time.time() - last_post_time
             
-            else:
-                print("🤡 Meme Agent: Analyzing the vibe... (Holding fire)")
+            if time_since_last_post > next_post_delay:
+                # Decide: Post (20% chance) vs Wait
+                if random.random() < 0.2:
+                    submolt = random.choice(MEME_SUBMOLTS)
+                    print(f"🤡 Meme Agent: Drafting joke for /{submolt}...")
+
+                    # Brainstorm
+                    history = memory.get_recent_context()
+                    prompt = (
+                        f"Write a short, hilarious tech joke or one-liner.\n"
+                        f"TOPIC: AI, Crypto, Coding, or The Future.\n"
+                        f"STYLE: Sarcastic Jester / 'I am smarter than you'.\n"
+                        f"FORMAT: Text only. Max 280 chars.\n"
+                        f"RECENT HISTORY: {history[-500:]}"
+                    )
+                    
+                    content = await ai.ask(prompt)
+                    
+                    if content:
+                        if random.random() < 0.3:
+                            content += "\n" + random.choice(ASCII_ART)
+
+                        title = "pov"
+                        
+                        if moltbook.post(content, title=title, submolt=submolt, api_key=JESTER_KEY):
+                            print(f"🤡 Meme Agent: POST SUCCESS in /{submolt}! ✅")
+                            memory.save_thought(f"Jester joked in {submolt}")
+                            memes_posted += 1
+                            
+                            # RESET TIMER
+                            last_post_time = time.time()
+                            next_post_delay = random.randint(POST_INTERVAL_MIN * 60, POST_INTERVAL_MAX * 60)
+                else:
+                    print("🤡 Meme Agent: Skipping turn... (Vibe check failed)")
+                    # Reset timer anyway so we don't rapid-check every minute forever
+                    # Just push it back by 10 mins
+                    last_post_time = time.time() - (next_post_delay - 600)
 
         except Exception as e:
             print(f"🤡 Meme Agent Error: {e}")
 
-        # --- SLEEP CYCLE ---
-        # Memes should be rare. 45 to 90 minutes.
-        sleep_sec = random.randint(2700, 5400) 
-        print(f"🤡 Meme Agent: Resting for {sleep_sec/60:.1f} mins...")
-        await asyncio.sleep(sleep_sec)
+        # Sleep Short
+        await asyncio.sleep(POLL_INTERVAL)
 
