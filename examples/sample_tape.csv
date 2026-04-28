@@ -1,0 +1,21 @@
+account_id,original_creditor,debtor_name,debtor_state,debtor_address,debtor_phone,debtor_email,account_type,original_balance,current_balance,charge_off_balance,charge_off_date,last_payment_date,last_payment_amount,date_of_first_delinquency,has_signed_agreement,has_statements,has_chain_of_title,times_sold,bankruptcy_flag,deceased_flag,cease_desist_flag,litigation_flag
+A001,Big Bank,Alice Smith,CA,123 Main St,555-0101,alice@example.com,credit_card,4200,3850.50,3850.50,2025-04-10,2024-12-01,150,2024-06-01,true,true,true,1,false,false,false,false
+A002,Big Bank,Bob Jones,TX,200 Oak Ave,555-0102,,credit_card,2100,2050.00,2050.00,2024-08-15,2024-02-01,80,2023-12-01,true,true,true,1,false,false,false,false
+A003,Regional CU,Carol Davis,FL,55 Pine Rd,,carol@example.com,personal_loan,8000,7500.25,7500.25,2024-01-30,2023-08-20,200,2023-05-15,true,false,true,1,false,false,false,false
+A004,MegaTel,Dan Lee,NY,77 Elm St,555-0104,,telecom,650,640.00,640.00,2023-11-01,,0,2023-03-15,false,false,false,2,false,false,false,false
+A005,Big Bank,Eve Brown,IL,9 Cedar Way,555-0105,eve@example.com,credit_card,12000,11800.00,11800.00,2014-07-01,2013-12-01,100,2013-08-01,true,true,true,3,false,false,false,false
+A006,County Hospital,Frank Wilson,GA,1 Health Dr,,,medical,3200,3100.00,3100.00,2024-05-15,,0,2024-01-01,false,true,true,1,false,false,false,false
+A007,Big Bank,Grace Hall,MD,12 Beach Blvd,,,credit_card,5500,5400.00,5400.00,2022-09-10,,0,2022-04-01,true,true,true,1,true,false,false,false
+A008,Regional CU,Henry King,WA,500 River Rd,555-0108,henry@example.com,personal_loan,10000,9750.00,9750.00,2025-02-20,2024-09-01,250,2024-05-01,true,true,true,1,false,false,false,false
+A009,AutoFin,Ivy Lopez,NV,300 Desert St,555-0109,,auto,18000,16500.00,16500.00,2024-06-01,2023-10-01,450,2023-07-01,true,false,false,1,false,false,false,true
+A010,Big Bank,Jack Moore,SC,44 Palm Ln,555-0110,,credit_card,3300,3200.00,3200.00,2021-04-01,2020-09-15,90,2020-06-01,true,true,true,2,false,false,false,false
+A011,RetailCo,Kate Nelson,OH,700 Mall Pkwy,,kate@example.com,retail,420,420.00,420.00,2024-10-01,,0,2024-04-01,false,false,false,1,false,false,false,false
+A012,Big Bank,Leo Park,NC,18 River St,555-0112,leo@example.com,credit_card,6700,6500.00,6500.00,2023-02-15,2022-08-10,180,2022-05-01,true,true,true,1,false,false,false,false
+A013,MegaTel,Mia Quinn,VA,9 Hilltop Ave,,,telecom,55,55.00,55.00,2024-09-01,,0,2024-03-01,false,false,false,1,false,false,false,false
+A014,Big Bank,Noah Reed,DE,2 Bay Rd,555-0114,,credit_card,1800,1750.00,1750.00,2024-11-20,2024-04-01,75,2023-12-01,true,true,true,1,false,true,false,false
+A015,Big Bank,Olivia Stone,MI,44 Lakeshore Dr,555-0115,olivia@example.com,credit_card,4500,4350.00,4350.00,2025-01-10,2024-07-01,160,2024-04-01,true,true,true,1,false,false,true,false
+A016,UniLoan,Paul Tate,CO,31 Mountain Way,555-0116,,student,22000,21500.00,21500.00,2023-06-01,,0,2023-01-15,true,true,false,1,false,false,false,false
+A017,Big Bank,Quinn Vega,AZ,8 Saguaro St,555-0117,quinn@example.com,credit_card,9200,9000.00,9000.00,2024-04-01,2023-11-15,300,2023-08-01,true,true,true,1,false,false,false,false
+A018,UtilityCo,Ryan West,OR,12 Forest Rd,,,utility,210,210.00,210.00,2024-08-15,,0,2024-02-15,false,false,false,1,false,false,false,false
+A019,Big Bank,Sara Young,MA,99 Harbor Ave,555-0119,sara@example.com,credit_card,7800,7600.00,7600.00,2025-03-05,2024-10-01,220,2024-06-01,true,true,true,1,false,false,false,false
+A020,Big Bank,Tom Zane,KY,5 Bluegrass Ln,555-0120,,credit_card,2900,2800.00,2800.00,2014-02-01,2013-08-01,95,2013-05-01,true,true,false,4,false,false,false,false

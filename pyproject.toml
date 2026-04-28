@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "debt-portfolio-analyzer"
+version = "0.1.0"
+description = "Compliance-first analyzer for charged-off debt portfolios. Scores collectability, flags compliance issues, estimates ROI. Does not contact consumers."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+dpa = "debt_portfolio_analyzer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["debt_portfolio_analyzer*"]
